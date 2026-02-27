@@ -8,7 +8,8 @@ const program = new Command();
 program
   .name('lore')
   .description('Persistent project memory for developers')
-  .version('0.1.0');
+  .version('0.1.0')
+  .action(() => program.outputHelp());
 
 program
   .command('init')
