@@ -19,7 +19,12 @@ Lore fixes that.
 ## Install
 
 ```bash
-# From source
+npm install -g lore-memory
+```
+
+Or from source:
+
+```bash
 git clone <this repo>
 cd lore
 npm install

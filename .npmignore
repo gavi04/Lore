@@ -1,0 +1,24 @@
+# Development
+.lore/
+.claude/
+node_modules/
+
+# Tests
+test/
+tests/
+*.test.js
+*.spec.js
+
+# Config
+.eslintrc*
+.prettierrc*
+.editorconfig
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Misc
+*.log
+.DS_Store

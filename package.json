@@ -1,10 +1,40 @@
 {
-  "name": "lore-cli",
+  "name": "lore-memory",
   "version": "0.1.0",
-  "description": "Persistent project memory for developers",
+  "description": "Persistent project memory for developers. Captures decisions, invariants, gotchas, and graveyard entries — automatically and manually — and injects them into AI coding sessions.",
   "main": "bin/lore.js",
   "bin": {
     "lore": "./bin/lore.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "lore",
+    "memory",
+    "decisions",
+    "architecture",
+    "ai",
+    "claude",
+    "mcp",
+    "context",
+    "knowledge-base",
+    "developer-tools",
+    "cli"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USERNAME/lore-cli.git"
+  },
+  "homepage": "https://github.com/YOUR_USERNAME/lore-cli#readme",
+  "bugs": {
+    "url": "https://github.com/YOUR_USERNAME/lore-cli/issues"
   },
   "dependencies": {
     "@babel/parser": "^7.29.0",
