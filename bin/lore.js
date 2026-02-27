@@ -58,4 +58,51 @@ program
   .description('Open an entry JSON in VSCode')
   .action(require('../src/commands/edit'));
 
+program
+  .command('serve')
+  .description('Start the Lore MCP server (stdio) for use with Claude Code')
+  .option('-q, --quiet', 'Suppress startup messages (use when piped into MCP client)')
+  .action(require('../src/commands/serve'));
+
+program
+  .command('embed')
+  .description('Build semantic search index using Ollama (requires ollama pull nomic-embed-text)')
+  .action(require('../src/commands/embed'));
+
+program
+  .command('onboard')
+  .description('Print a re-onboarding brief for this project')
+  .option('--days <n>', 'Only show if away for at least N days', '0')
+  .action(require('../src/commands/onboard'));
+
+program
+  .command('watch')
+  .description('Watch project for decisions and mine comments passively')
+  .option('-d, --daemon', 'Run as background daemon')
+  .option('--stop', 'Stop the running background daemon')
+  .option('--daemon-worker', { hidden: true })
+  .action(require('../src/commands/watch'));
+
+program
+  .command('mine [path]')
+  .description('Mine source files for lore-worthy comments and create drafts')
+  .action(require('../src/commands/mine'));
+
+program
+  .command('drafts')
+  .description('Review and approve auto-captured draft entries')
+  .option('--auto', 'Auto-accept drafts with confidence >= 0.8')
+  .action(require('../src/commands/drafts'));
+
+program
+  .command('score')
+  .description('Show the Lore Score — memory health metric for this project')
+  .action(require('../src/commands/score'));
+
+program
+  .command('graph [filepath]')
+  .description('Show or build the module dependency graph')
+  .option('--build', 'Rebuild the full graph from source')
+  .action(require('../src/commands/graph'));
+
 program.parse(process.argv);

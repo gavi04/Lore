@@ -4,6 +4,7 @@ const chalk = require('chalk');
 const { readIndex } = require('../lib/index');
 const { readEntry } = require('../lib/entries');
 const { checkStaleness } = require('../lib/stale');
+const { getDraftCount } = require('../lib/drafts');
 const { requireInit } = require('../lib/guard');
 
 function status() {
@@ -26,11 +27,16 @@ function status() {
       }
     }
 
+    const draftCount = getDraftCount();
+
     console.log(chalk.cyan('\n📖 Lore Status'));
     console.log(`  decisions:  ${counts.decision}`);
     console.log(`  invariants: ${counts.invariant}`);
     console.log(`  graveyard:  ${counts.graveyard}`);
     console.log(`  gotchas:    ${counts.gotcha}`);
+    if (draftCount > 0) {
+      console.log(chalk.yellow(`  drafts:     ${draftCount} pending — run: lore drafts`));
+    }
 
     if (staleItems.length > 0) {
       console.log(chalk.yellow('\n⚠️  Stale entries (linked files changed since entry was written):'));

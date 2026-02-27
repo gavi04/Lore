@@ -121,6 +121,21 @@ async function log(options) {
     writeIndex(index);
 
     console.log(chalk.green(`✓ Saved to ${entryPath}`));
+
+    // Auto-embed if Ollama is available and autoEmbed is enabled
+    try {
+      const { readConfig } = require('../lib/config');
+      const config = readConfig();
+      if (config.embed && config.embed.autoEmbed) {
+        const { generateEmbedding, storeEmbedding } = require('../lib/embeddings');
+        const text = [title, context, ...alternatives.filter(Boolean), tradeoffs, ...tags].join(' ');
+        const vector = await generateEmbedding(text);
+        storeEmbedding(id, vector);
+        console.log(chalk.dim('  (embedding stored)'));
+      }
+    } catch (e) {
+      // Ollama not running — skip silently
+    }
   } catch (e) {
     if (e.message && e.message.includes('force closed')) {
       console.log(chalk.yellow('\nAborted.'));
