@@ -25,8 +25,8 @@ npm install -g lore-memory
 Or from source:
 
 ```bash
-git clone <this repo>
-cd lore
+git clone https://github.com/Tjindl/Lore
+cd Lore
 npm install
 npm link        # makes `lore` available globally
 ```
