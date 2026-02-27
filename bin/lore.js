@@ -9,7 +9,94 @@ program
   .name('lore')
   .description('Persistent project memory for developers')
   .version('0.1.0')
-  .action(() => program.outputHelp());
+  .action(async () => {
+    const inquirer = require('inquirer');
+    const chalk = require('chalk');
+    const { execSync } = require('child_process');
+
+    const LORE_LOGO = `
+    ██╗      ██████╗ ██████╗ ███████╗
+    ██║     ██╔═══██╗██╔══██╗██╔════╝
+    ██║     ██║   ██║██████╔╝█████╗  
+    ██║     ██║   ██║██╔══██╗██╔══╝  
+    ███████╗╚██████╔╝██║  ██║███████╗
+    ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝
+    `;
+
+    console.log(chalk.cyan(LORE_LOGO));
+    console.log(chalk.dim('    Project Memory for Developers\n'));
+
+    const { action } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'action',
+        message: 'What would you like to do?',
+        choices: [
+          { name: '📝 Log new knowledge (lore log)', value: 'log' },
+          { name: '👀 Review pending drafts (lore drafts)', value: 'drafts' },
+          { name: '📊 View project health (lore score)', value: 'score' },
+          { name: '🔍 Search knowledge base (lore search)', value: 'search' },
+          { name: '⚙️  Start background watcher (lore watch --daemon)', value: 'watch --daemon' },
+          new inquirer.Separator(),
+          { name: '❓ Show Help', value: 'help' },
+          { name: '❌ Exit', value: 'exit' }
+        ],
+      },
+    ]);
+
+    if (action === 'exit') {
+      process.exit(0);
+    } else if (action === 'help') {
+      program.outputHelp();
+    } else {
+      console.log();
+      try {
+        execSync(`node ${__filename} ${action}`, { stdio: 'inherit' });
+      } catch (e) { }
+    }
+  });
+
+// Fuzzy matching for unknown commands
+program.on('command:*', function (operands) {
+  const chalk = require('chalk');
+  console.error(chalk.red(`error: unknown command '${operands[0]}'`));
+  const availableCommands = program.commands.map(cmd => cmd.name());
+
+  // Simple Levenshtein distance check for did-you-mean
+  let closest = null;
+  let minDistance = 3; // only suggest if distance < 3
+
+  for (const cmd of availableCommands) {
+    let distance = 0;
+    const a = operands[0];
+    const b = cmd;
+    const matrix = Array(b.length + 1).fill(null).map(() => Array(a.length + 1).fill(null));
+    for (let i = 0; i <= a.length; i += 1) { matrix[0][i] = i; }
+    for (let j = 0; j <= b.length; j += 1) { matrix[j][0] = j; }
+    for (let j = 1; j <= b.length; j += 1) {
+      for (let i = 1; i <= a.length; i += 1) {
+        const indicator = a[i - 1] === b[j - 1] ? 0 : 1;
+        matrix[j][i] = Math.min(
+          matrix[j][i - 1] + 1,
+          matrix[j - 1][i] + 1,
+          matrix[j - 1][i - 1] + indicator
+        );
+      }
+    }
+    distance = matrix[b.length][a.length];
+
+    if (distance < minDistance) {
+      minDistance = distance;
+      closest = cmd;
+    }
+  }
+
+  if (closest) {
+    console.log();
+    console.log(chalk.yellow(`Did you mean ${chalk.bold('lore ' + closest)}?`));
+  }
+  process.exitCode = 1;
+});
 
 program
   .command('init')

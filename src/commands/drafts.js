@@ -38,8 +38,7 @@ async function drafts(options) {
 
   console.log(chalk.cyan(`\n📖 ${pending.length} pending draft${pending.length === 1 ? '' : 's'}\n`));
 
-  for (let i = 0; i < pending.length; i++) {
-    const draft = pending[i];
+  const choices = pending.map((draft, i) => {
     const conf = Math.round((draft.confidence || 0) * 100);
     const typeColor = {
       decision: chalk.blue,
@@ -48,97 +47,74 @@ async function drafts(options) {
       graveyard: chalk.dim,
     }[draft.suggestedType] || chalk.white;
 
-    console.log(chalk.cyan(`[${i + 1}/${pending.length}] SUGGESTED: ${typeColor(draft.suggestedType.toUpperCase())}  (confidence: ${conf}%)`));
-    console.log(`  ${chalk.bold('Title:')}    ${draft.suggestedTitle}`);
-    console.log(`  ${chalk.bold('Evidence:')} ${draft.evidence}`);
-    if (draft.files && draft.files.length > 0) {
-      console.log(`  ${chalk.bold('Files:')}    ${draft.files.join(', ')}`);
-    }
-    console.log();
+    // Create a nicely formatted display string
+    const title = draft.suggestedTitle.length > 50 ? draft.suggestedTitle.slice(0, 47) + '...' : draft.suggestedTitle;
+    const display = `${typeColor(draft.suggestedType.toUpperCase().padEnd(9))} | ${title.padEnd(50)} | Conf: ${conf}%`;
 
-    let done = false;
-    while (!done) {
-      let action;
-      try {
-        const ans = await inquirer.prompt([{
-          type: 'list',
-          name: 'action',
-          message: 'Action:',
-          choices: [
-            { name: '[a] Accept', value: 'accept' },
-            { name: '[e] Edit then save', value: 'edit' },
-            { name: '[s] Skip', value: 'skip' },
-            { name: '[d] Delete', value: 'delete' },
-            { name: '[q] Quit', value: 'quit' },
-          ],
-        }]);
-        action = ans.action;
-      } catch (e) {
-        console.log(chalk.yellow('\nAborted.'));
-        return;
-      }
+    return {
+      name: display,
+      value: draft,
+      checked: conf >= 80 // Pre-check high confidence ones
+    };
+  });
 
-      if (action === 'accept') {
-        const entry = acceptDraft(draft.draftId);
-        console.log(chalk.green(`  ✓ Saved as ${entry.id}`));
-        done = true;
-      } else if (action === 'edit') {
-        let edited;
-        try {
-          edited = await inquirer.prompt([
-            {
-              type: 'list',
-              name: 'type',
-              message: 'Type:',
-              choices: ['decision', 'invariant', 'gotcha', 'graveyard'],
-              default: draft.suggestedType,
-            },
-            {
-              type: 'input',
-              name: 'title',
-              message: 'Title:',
-              default: draft.suggestedTitle,
-            },
-            {
-              type: 'input',
-              name: 'context',
-              message: 'Context:',
-              default: draft.evidence,
-            },
-          ]);
-        } catch (e) {
-          console.log(chalk.yellow('\nAborted.'));
-          return;
-        }
-
-        // Update draft on disk, then accept
-        const draftPath = path.join(LORE_DIR, 'drafts', `${draft.draftId}.json`);
-        fs.writeJsonSync(draftPath, {
-          ...draft,
-          suggestedType: edited.type,
-          suggestedTitle: edited.title,
-          evidence: edited.context,
-        }, { spaces: 2 });
-
-        const entry = acceptDraft(draft.draftId);
-        console.log(chalk.green(`  ✓ Saved as ${entry.id}`));
-        done = true;
-      } else if (action === 'skip') {
-        console.log(chalk.dim('  Skipped'));
-        done = true;
-      } else if (action === 'delete') {
-        deleteDraft(draft.draftId);
-        console.log(chalk.dim('  Deleted'));
-        done = true;
-      } else if (action === 'quit') {
-        console.log(chalk.cyan('\n  Remaining drafts saved. Run: lore drafts'));
-        return;
-      }
-    }
-    console.log();
+  let selectedDrafts;
+  try {
+    const ans = await inquirer.prompt([{
+      type: 'checkbox',
+      name: 'selected',
+      message: 'Select drafts to ACCEPT (unselected drafts will be kept pending):',
+      choices: choices,
+      pageSize: 15
+    }]);
+    selectedDrafts = ans.selected;
+  } catch (e) {
+    console.log(chalk.yellow('\nAborted.'));
+    return;
   }
 
-  console.log(chalk.green('✓ All drafts reviewed'));
+  if (selectedDrafts.length === 0) {
+    console.log(chalk.yellow('\nNo drafts selected. Keeping all drafts pending.'));
+  } else {
+    console.log(chalk.cyan(`\nAccepting ${selectedDrafts.length} drafts...`));
+    for (const draft of selectedDrafts) {
+      const entry = acceptDraft(draft.draftId);
+      console.log(chalk.green(`  ✓ ${draft.suggestedTitle} -> Saved as ${entry.id}`));
+    }
+  }
+
+  // Ask about deletions for remaining
+  const remainingDrafts = pending.filter(p => !selectedDrafts.find(s => s.draftId === p.draftId));
+
+  if (remainingDrafts.length > 0) {
+    console.log();
+    let deleteSelection;
+    try {
+      const deleteAns = await inquirer.prompt([{
+        type: 'checkbox',
+        name: 'deletes',
+        message: 'Select drafts to permanently DELETE:',
+        choices: remainingDrafts.map(draft => ({
+          name: `${draft.suggestedType.toUpperCase().padEnd(9)} | ${draft.suggestedTitle}`,
+          value: draft
+        })),
+        pageSize: 10
+      }]);
+      deleteSelection = deleteAns.deletes;
+    } catch (e) {
+      return;
+    }
+
+    if (deleteSelection.length > 0) {
+      console.log(chalk.yellow(`\nDeleting ${deleteSelection.length} drafts...`));
+      for (const draft of deleteSelection) {
+        deleteDraft(draft.draftId);
+        console.log(chalk.dim(`  ✗ Deleted: ${draft.suggestedTitle}`));
+      }
+    }
+  }
+
+  console.log(chalk.green('\n✓ Draft review complete'));
 }
 
 module.exports = drafts;
