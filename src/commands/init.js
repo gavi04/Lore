@@ -9,10 +9,13 @@ const { LORE_DIR, emptyIndex } = require('../lib/index');
 const HOOK_CONTENT = `#!/bin/bash
 LINECOUNT=$(git diff HEAD~1 --shortstat 2>/dev/null | grep -o '[0-9]* insertion' | grep -o '[0-9]*' || echo 0)
 if [ "\${LINECOUNT:-0}" -gt 50 ]; then
-  echo "📖 Lore: Significant change detected. Log it? (y/n)"
-  read -r answer </dev/tty
-  if [ "$answer" = "y" ]; then
-    lore log </dev/tty
+  # Only prompt if running in an interactive terminal
+  if [ -t 1 ] || [ -t 0 ]; then
+    echo "📖 Lore: Significant change detected. Log it? (y/n)"
+    read -r answer </dev/tty
+    if [ "$answer" = "y" ]; then
+      lore log </dev/tty
+    fi
   fi
 fi
 `;

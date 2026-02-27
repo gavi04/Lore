@@ -45,6 +45,11 @@ async function handler(args) {
       }
     }
 
+    // Sort entries newest-first
+    for (const type of Object.keys(byType)) {
+      byType[type].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    }
+
     const lines = [];
     const projectName = config.project || 'this project';
 

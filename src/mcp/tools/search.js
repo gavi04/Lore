@@ -49,9 +49,19 @@ async function handler(args) {
       ].join(' ').toLowerCase();
 
       if (searchable.includes(q)) {
-        matches.push(entry);
+        // Calculate a basic relevance score for text search:
+        // 1. Term frequency of query
+        const tf = (searchable.match(new RegExp(q, 'g')) || []).length;
+        // 2. Bonus for newer entries
+        const ageDays = (Date.now() - new Date(entry.date || 0)) / (1000 * 60 * 60 * 24);
+        const recencyBonus = Math.max(0, 5 - (ageDays / 30)); // up to +5 points for newest
+
+        matches.push(Object.assign({}, entry, { _score: tf + recencyBonus }));
       }
     }
+
+    // Sort matches by relevance score descending
+    matches.sort((a, b) => (b._score || 0) - (a._score || 0));
 
     // Try semantic search if text search found nothing and embeddings exist
     if (matches.length === 0) {

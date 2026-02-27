@@ -22,7 +22,7 @@ function makeDraft(overrides) {
   };
 }
 
-function onFileDeletion(filepath, projectRoot) {
+async function onFileDeletion(filepath, projectRoot) {
   const relativePath = path.relative(projectRoot, filepath).replace(/\\/g, '/');
 
   // Try to check line count via git
@@ -32,7 +32,7 @@ function onFileDeletion(filepath, projectRoot) {
       encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'],
     });
     lines = parseInt(out.trim(), 10) || 0;
-  } catch (e) {}
+  } catch (e) { }
 
   if (lines > 0 && lines < 100) return null;
 
@@ -48,7 +48,7 @@ function onFileDeletion(filepath, projectRoot) {
   return draft;
 }
 
-function onDirectoryDeletion(dirpath, projectRoot) {
+async function onDirectoryDeletion(dirpath, projectRoot) {
   const relativePath = path.relative(projectRoot, dirpath).replace(/\\/g, '/');
   const name = path.basename(relativePath);
   const draft = makeDraft({
@@ -62,7 +62,7 @@ function onDirectoryDeletion(dirpath, projectRoot) {
   return draft;
 }
 
-function onNewFile(filepath, projectRoot) {
+async function onNewFile(filepath, projectRoot) {
   const relativePath = path.relative(projectRoot, filepath).replace(/\\/g, '/');
   const name = path.basename(relativePath);
   const lower = name.toLowerCase();
@@ -97,7 +97,7 @@ function onNewFile(filepath, projectRoot) {
   return null;
 }
 
-function onPackageJsonChange(filepath, projectRoot) {
+async function onPackageJsonChange(filepath, projectRoot) {
   const relativePath = path.relative(projectRoot, filepath).replace(/\\/g, '/');
   if (!relativePath.endsWith('package.json')) return [];
 
@@ -108,9 +108,9 @@ function onPackageJsonChange(filepath, projectRoot) {
       encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'],
     });
     prev = JSON.parse(prevRaw);
-  } catch (e) {}
+  } catch (e) { }
 
-  try { curr = fs.readJsonSync(filepath); } catch (e) { return []; }
+  try { curr = await fs.readJson(filepath); } catch (e) { return []; }
 
   const prevDeps = Object.assign({}, prev.dependencies || {}, prev.devDependencies || {});
   const currDeps = Object.assign({}, curr.dependencies || {}, curr.devDependencies || {});
@@ -143,7 +143,7 @@ function onPackageJsonChange(filepath, projectRoot) {
   return drafts;
 }
 
-function onCommitMessage(message, projectRoot) {
+async function onCommitMessage(message, projectRoot) {
   const lower = message.toLowerCase();
   const signals = [
     { re: /\b(replac|switch(ed|ing)|migrat)\b/, type: 'decision', confidence: 0.8 },
@@ -171,12 +171,12 @@ function onCommitMessage(message, projectRoot) {
 }
 
 // Track repeated edits to detect gotcha-worthy files
-function trackFileEdit(filepath, projectRoot) {
+async function trackFileEdit(filepath, projectRoot) {
   const relativePath = path.relative(projectRoot, filepath).replace(/\\/g, '/');
   const statePath = path.join(LORE_DIR, 'watch-state.json');
 
   let state = { edits: {} };
-  try { state = fs.readJsonSync(statePath); } catch (e) {}
+  try { state = await fs.readJson(statePath); } catch (e) { }
   if (!state.edits) state.edits = {};
 
   const now = Date.now();
@@ -186,7 +186,7 @@ function trackFileEdit(filepath, projectRoot) {
   state.edits[relativePath].push(now);
   state.edits[relativePath] = state.edits[relativePath].filter(t => t > weekAgo);
 
-  try { fs.writeJsonSync(statePath, state, { spaces: 2 }); } catch (e) {}
+  try { await fs.writeJson(statePath, state, { spaces: 2 }); } catch (e) { }
 
   if (state.edits[relativePath].length >= 5) {
     const name = path.basename(relativePath);
@@ -201,7 +201,7 @@ function trackFileEdit(filepath, projectRoot) {
     saveDraft(draft);
     // Reset to avoid spam
     state.edits[relativePath] = [];
-    try { fs.writeJsonSync(statePath, state, { spaces: 2 }); } catch (e) {}
+    try { await fs.writeJson(statePath, state, { spaces: 2 }); } catch (e) { }
     return draft;
   }
   return null;

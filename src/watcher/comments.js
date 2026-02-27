@@ -47,11 +47,11 @@ function extractComments(code, filePath) {
  * Saves passing comments as drafts.
  * @param {string} absFilePath
  * @param {string} projectRoot
- * @returns {object[]} created drafts
+ * @returns {Promise<object[]>} created drafts
  */
-function mineFile(absFilePath, projectRoot) {
+async function mineFile(absFilePath, projectRoot) {
   let code = '';
-  try { code = fs.readFileSync(absFilePath, 'utf8'); } catch (e) { return []; }
+  try { code = await fs.readFile(absFilePath, 'utf8'); } catch (e) { return []; }
 
   const relativePath = path.relative(projectRoot, absFilePath).replace(/\\/g, '/');
   const comments = extractComments(code, absFilePath);

@@ -29,9 +29,9 @@ function startWatcher(options = {}) {
 
   const log = options.logFile
     ? (msg) => {
-        const plain = msg.replace(/\x1B\[[0-9;]*m/g, '');
-        fs.appendFileSync(options.logFile, `${new Date().toISOString()} ${plain}\n`);
-      }
+      const plain = msg.replace(/\x1B\[[0-9;]*m/g, '');
+      fs.appendFileSync(options.logFile, `${new Date().toISOString()} ${plain}\n`);
+    }
     : (msg) => console.log(msg);
 
   if (!options.quiet) {
@@ -56,46 +56,46 @@ function startWatcher(options = {}) {
     awaitWriteFinish: { stabilityThreshold: 500, pollInterval: 100 },
   });
 
-  watcher.on('unlink', (relPath) => {
+  watcher.on('unlink', async (relPath) => {
     const abs = path.join(projectRoot, relPath);
-    const draft = signals.onFileDeletion(abs, projectRoot);
+    const draft = await signals.onFileDeletion(abs, projectRoot);
     if (draft) recordDraft(draft, abs);
   });
 
-  watcher.on('unlinkDir', (relPath) => {
+  watcher.on('unlinkDir', async (relPath) => {
     const abs = path.join(projectRoot, relPath);
-    const draft = signals.onDirectoryDeletion(abs, projectRoot);
+    const draft = await signals.onDirectoryDeletion(abs, projectRoot);
     if (draft) recordDraft(draft, abs);
   });
 
-  watcher.on('add', (relPath) => {
+  watcher.on('add', async (relPath) => {
     const abs = path.join(projectRoot, relPath);
-    const draft = signals.onNewFile(abs, projectRoot);
+    const draft = await signals.onNewFile(abs, projectRoot);
     if (draft) recordDraft(draft, abs);
   });
 
-  watcher.on('change', (relPath) => {
+  watcher.on('change', async (relPath) => {
     const abs = path.join(projectRoot, relPath);
 
     // Repeated edit tracking
-    const editDraft = signals.trackFileEdit(abs, projectRoot);
+    const editDraft = await signals.trackFileEdit(abs, projectRoot);
     if (editDraft) recordDraft(editDraft, abs);
 
     // package.json changes
     if (relPath.endsWith('package.json')) {
-      const pkgDrafts = signals.onPackageJsonChange(abs, projectRoot);
+      const pkgDrafts = await signals.onPackageJsonChange(abs, projectRoot);
       for (const d of pkgDrafts) recordDraft(d, abs);
     }
 
     // Comment mining + graph update for source files
     if (/\.(js|ts|jsx|tsx|py|go|rs)$/.test(relPath)) {
-      const commentDrafts = mineFile(abs, projectRoot);
+      const commentDrafts = await mineFile(abs, projectRoot);
       if (commentDrafts.length > 0) {
         draftCount += commentDrafts.length;
         log(`${chalk.dim(`[${timestamp()}]`)} Mined ${commentDrafts.length} comment${commentDrafts.length === 1 ? '' : 's'} from ${chalk.yellow(relPath)} — queued for review`);
       }
 
-      try { updateGraphForFile(abs, projectRoot); } catch (e) {}
+      try { updateGraphForFile(abs, projectRoot); } catch (e) { }
     }
   });
 
@@ -104,15 +104,15 @@ function startWatcher(options = {}) {
   let gitWatcher = null;
   if (fs.existsSync(path.join(projectRoot, '.git'))) {
     gitWatcher = chokidar.watch(commitMsgPath, { persistent: true, ignoreInitial: true });
-    gitWatcher.on('change', () => {
+    gitWatcher.on('change', async () => {
       try {
-        const message = fs.readFileSync(commitMsgPath, 'utf8').trim();
-        const drafts = signals.onCommitMessage(message, projectRoot);
+        const message = await fs.readFile(commitMsgPath, 'utf8');
+        const drafts = await signals.onCommitMessage(message.trim(), projectRoot);
         for (const d of drafts) {
           draftCount++;
           log(`${chalk.dim(`[${timestamp()}]`)} Commit signal: "${message.slice(0, 60)}" — queued for review`);
         }
-      } catch (e) {}
+      } catch (e) { }
     });
   }
 
