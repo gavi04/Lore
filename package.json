@@ -1,0 +1,16 @@
+{
+  "name": "lore-cli",
+  "version": "0.1.0",
+  "description": "Persistent project memory for developers",
+  "main": "bin/lore.js",
+  "bin": {
+    "lore": "./bin/lore.js"
+  },
+  "dependencies": {
+    "chalk": "^4",
+    "commander": "^11",
+    "fs-extra": "^11",
+    "inquirer": "^8",
+    "js-yaml": "^4"
+  }
+}
