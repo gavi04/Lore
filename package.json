@@ -1,6 +1,6 @@
 {
   "name": "lore-memory",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Persistent project memory for developers. Captures decisions, invariants, gotchas, and graveyard entries — automatically and manually — and injects them into AI coding sessions.",
   "main": "bin/lore.js",
   "bin": {
