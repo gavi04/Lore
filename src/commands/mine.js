@@ -6,7 +6,7 @@ const fs = require('fs-extra');
 const { mineFile, mineDirectory } = require('../watcher/comments');
 const { requireInit } = require('../lib/guard');
 
-function mine(targetPath) {
+async function mine(targetPath) {
   requireInit();
   const projectRoot = process.cwd();
   const target = targetPath || '.';
@@ -18,10 +18,11 @@ function mine(targetPath) {
 
     if (stat.isDirectory()) {
       console.log(chalk.cyan(`📖 Mining comments in ${target} ...`));
-      count = mineDirectory(abs, projectRoot);
+      count = await mineDirectory(abs, projectRoot);
     } else {
       console.log(chalk.cyan(`📖 Mining comments in ${target} ...`));
-      count = mineFile(abs, projectRoot).length;
+      const drafts = await mineFile(abs, projectRoot);
+      count = drafts.length;
     }
 
     if (count === 0) {

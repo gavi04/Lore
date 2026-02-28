@@ -10,6 +10,9 @@ program
   .description('Persistent project memory for developers')
   .version('0.1.0')
   .action(async () => {
+    // Only launch the interactive menu if strictly NO arguments were provided
+    if (process.argv.length !== 2) return;
+
     const inquirer = require('inquirer');
     const chalk = require('chalk');
     const { execSync } = require('child_process');
@@ -36,6 +39,7 @@ program
           { name: '👀 Review pending drafts (lore drafts)', value: 'drafts' },
           { name: '📊 View project health (lore score)', value: 'score' },
           { name: '🔍 Search knowledge base (lore search)', value: 'search' },
+          { name: '🌐 Open Local Web Dashboard (lore ui)', value: 'ui' },
           { name: '⚙️  Start background watcher (lore watch --daemon)', value: 'watch --daemon' },
           new inquirer.Separator(),
           { name: '❓ Show Help', value: 'help' },
@@ -191,5 +195,11 @@ program
   .description('Show or build the module dependency graph')
   .option('--build', 'Rebuild the full graph from source')
   .action(require('../src/commands/graph'));
+
+program
+  .command('ui')
+  .description('Start the local Lore web dashboard')
+  .option('-p, --port <port>', 'Port to run the UI server on', '3333')
+  .action(require('../src/commands/ui'));
 
 program.parse(process.argv);

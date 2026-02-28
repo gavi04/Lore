@@ -92,7 +92,7 @@ async function mineFile(absFilePath, projectRoot) {
  * @param {string[]} ignore
  * @returns {number} total drafts created
  */
-function mineDirectory(absDirPath, projectRoot, ignore) {
+async function mineDirectory(absDirPath, projectRoot, ignore) {
   const { globSync } = require('glob');
   const ignoreList = ignore || ['node_modules', 'dist', '.git', '.lore', 'coverage'];
   const ignorePats = ignoreList.map(i => `${i}/**`);
@@ -105,7 +105,8 @@ function mineDirectory(absDirPath, projectRoot, ignore) {
 
   let total = 0;
   for (const file of files) {
-    total += mineFile(file, projectRoot).length;
+    const drafts = await mineFile(file, projectRoot);
+    total += drafts.length;
   }
   return total;
 }

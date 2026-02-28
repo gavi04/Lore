@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lore Dashboard</title>
+    <!-- Retro Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Vis Network for Graphs -->
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="crt-overlay"></div>
+    
+    <div class="layout">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="logo">
+                <pre>
+██╗      ██████╗ ██████╗ ███████╗
+██║     ██╔═══██╗██╔══██╗██╔════╝
+██║     ██║   ██║██████╔╝█████╗  
+██║     ██║   ██║██╔══██╗██╔══╝  
+███████╗╚██████╔╝██║  ██║███████╗
+╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝
+                </pre>
+                <div class="subtitle">PROJECT MEMORY</div>
+            </div>
+            
+            <ul class="nav-links">
+                <li><a href="#" class="active" data-target="dashboard">Dashboard</a></li>
+                <li><a href="#" data-target="knowledge">Knowledge Base</a></li>
+                <li><a href="#" data-target="drafts">Pending Drafts (<span id="nav-draft-count">0</span>)</a></li>
+                <li><a href="#" data-target="graph">Dependency Graph</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="content">
+            
+            <!-- Dashboard View -->
+            <section id="view-dashboard" class="view active">
+                <h1 class="glitch" data-text="LORE SCORE">LORE SCORE</h1>
+                <div class="score-card">
+                    <div class="main-score">
+                        <span id="score-value">--</span><span class="muted">/100</span>
+                    </div>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric">
+                        <h3>COVERAGE</h3>
+                        <div class="progress-bar"><div class="fill" id="fill-coverage"></div></div>
+                        <p class="stats" id="stat-coverage">--%</p>
+                    </div>
+                    <div class="metric">
+                        <h3>FRESHNESS</h3>
+                        <div class="progress-bar"><div class="fill" id="fill-freshness"></div></div>
+                        <p class="stats" id="stat-freshness">--%</p>
+                    </div>
+                    <div class="metric">
+                        <h3>DEPTH</h3>
+                        <div class="progress-bar"><div class="fill" id="fill-depth"></div></div>
+                        <p class="stats" id="stat-depth">--%</p>
+                    </div>
+                </div>
+
+                <div class="tips-container">
+                    <h3>SYSTEM ALERTS</h3>
+                    <ul id="score-tips" class="terminal-list">
+                        <li>Loading heuristics...</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Knowledge Base View -->
+            <section id="view-knowledge" class="view">
+                <h1>KNOWLEDGE BASE</h1>
+                <div class="controls">
+                    <input type="text" id="kb-search" placeholder="Search memory..._">
+                    <select id="kb-filter">
+                        <option value="all">ALL TYPES</option>
+                        <option value="decision">DECISIONS</option>
+                        <option value="invariant">INVARIANTS</option>
+                        <option value="gotcha">GOTCHAS</option>
+                        <option value="graveyard">GRAVEYARD</option>
+                    </select>
+                </div>
+                <div id="kb-list" class="entries-grid">
+                    <!-- Entries injected here by JS -->
+                </div>
+            </section>
+
+            <!-- Drafts View -->
+            <section id="view-drafts" class="view">
+                <h1>PENDING DRAFTS</h1>
+                <p class="subtitle">Awaiting human approval.</p>
+                <div id="drafts-list" class="drafts-container">
+                    <!-- Drafts injected here by JS -->
+                </div>
+            </section>
+
+            <!-- Graph View -->
+            <section id="view-graph" class="view">
+                <h1>DEPENDENCY GRAPH</h1>
+                <div id="network-container"></div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Modals / Tooltips -->
+    <div id="toast" class="toast hidden">Action successful</div>
+
+    <script src="app.js"></script>
+</body>
+</html>
