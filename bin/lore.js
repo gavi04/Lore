@@ -39,6 +39,7 @@ program
           { name: '👀 Review pending drafts (lore drafts)', value: 'drafts' },
           { name: '📊 View project health (lore score)', value: 'score' },
           { name: '🔍 Search knowledge base (lore search)', value: 'search' },
+          { name: '🪄 Generate AI Prompt (lore prompt)', value: 'prompt' },
           { name: '🌐 Open Local Web Dashboard (lore ui)', value: 'ui' },
           { name: '⚙️  Start background watcher (lore watch --daemon)', value: 'watch --daemon' },
           new inquirer.Separator(),
@@ -52,6 +53,18 @@ program
       process.exit(0);
     } else if (action === 'help') {
       program.outputHelp();
+    } else if (action === 'prompt') {
+      const { query } = await inquirer.prompt([{
+        type: 'input',
+        name: 'query',
+        message: 'What are you trying to build or refactor? (e.g. "Add a login page")'
+      }]);
+      console.log();
+      if (query.trim()) {
+        try {
+          execSync(`node ${__filename} prompt "${query.replace(/"/g, '\\"')}"`, { stdio: 'inherit' });
+        } catch (e) { }
+      }
     } else {
       console.log();
       try {
@@ -201,5 +214,12 @@ program
   .description('Start the local Lore web dashboard')
   .option('-p, --port <port>', 'Port to run the UI server on', '3333')
   .action(require('../src/commands/ui'));
+
+program
+  .command('prompt <query>')
+  .description('Generate a perfectly formatted LLM context prompt from project memory')
+  .option('-t, --threshold <number>', 'Relevance threshold (0.0 to 1.0)', '0.4')
+  .option('-l, --limit <number>', 'Max number of entries to include', '10')
+  .action(require('../src/commands/prompt'));
 
 program.parse(process.argv);

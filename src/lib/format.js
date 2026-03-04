@@ -71,4 +71,47 @@ function printEntry(entry) {
   drawBox(content.trim(), colorFn, entry.id);
 }
 
-module.exports = { printEntry };
+function formatPromptContext(query, entries) {
+  if (!entries || entries.length === 0) {
+    return `# Project Context: Lore\nThe user is asking about: "${query}"\n\nNo specific historical rules or decisions were found in the project memory for this topic.`;
+  }
+
+  const invariants = entries.filter(e => e.type === 'invariant');
+  const gotchas = entries.filter(e => e.type === 'gotcha');
+  const decisions = entries.filter(e => e.type === 'decision');
+  const graveyard = entries.filter(e => e.type === 'graveyard');
+
+  let output = `# Project Context: Lore\nThe user is asking: "${query}"\n\nPlease adhere strictly to the following project architectural rules extracted from project memory:\n`;
+
+  if (invariants.length > 0) {
+    output += `\n## Invariants (CRITICAL: DO NOT BREAK)\n`;
+    for (const e of invariants) {
+      output += `- [${e.id}]: ${e.context.trim().replace(/\n/g, ' ')}\n`;
+    }
+  }
+
+  if (gotchas.length > 0) {
+    output += `\n## Gotchas (WARNING: KNOWN TRAPS)\n`;
+    for (const e of gotchas) {
+      output += `- [${e.id}]: ${e.context.trim().replace(/\n/g, ' ')}\n`;
+    }
+  }
+
+  if (decisions.length > 0) {
+    output += `\n## Relevant Decisions\n`;
+    for (const e of decisions) {
+      output += `- [${e.id}]: ${e.title} - ${e.context.trim().replace(/\n/g, ' ')}\n`;
+    }
+  }
+
+  if (graveyard.length > 0) {
+    output += `\n## Graveyard (DO NOT SUGGEST OR USE)\n`;
+    for (const e of graveyard) {
+      output += `- [${e.id}]: ${e.context.trim().replace(/\n/g, ' ')}\n`;
+    }
+  }
+
+  return output.trim();
+}
+
+module.exports = { printEntry, formatPromptContext };
