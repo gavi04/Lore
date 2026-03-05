@@ -8,7 +8,7 @@ const program = new Command();
 program
   .name('lore')
   .description('Persistent project memory for developers')
-  .version('0.1.0')
+  .version(require('../package.json').version)
   .action(async () => {
     // Only launch the interactive menu if strictly NO arguments were provided
     if (process.argv.length !== 2) return;
