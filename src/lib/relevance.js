@@ -21,19 +21,21 @@ function scoreEntry(entry, context) {
   let score = 0;
 
   // Direct file match
+  let exactMatchFound = false;
   if (context.filepath && entry.files && entry.files.length > 0) {
     const normalizedQuery = context.filepath.replace(/^\.\//, '');
     for (const f of entry.files) {
       const normalizedFile = f.replace(/^\.\//, '');
       if (normalizedFile === normalizedQuery) {
         score += WEIGHTS.directFileMatch;
+        exactMatchFound = true;
         break;
       }
     }
   }
 
   // Parent dir match
-  if (context.filepath && entry.files && entry.files.length > 0) {
+  if (!exactMatchFound && context.filepath && entry.files && entry.files.length > 0) {
     const queryDir = path.dirname(context.filepath.replace(/^\.\//, ''));
     for (const f of entry.files) {
       const fileDir = path.dirname(f.replace(/^\.\//, ''));
