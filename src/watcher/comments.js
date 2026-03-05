@@ -3,7 +3,9 @@
 const fs = require('fs-extra');
 const path = require('path');
 const { detectType, extractTitle, scoreComment } = require('../lib/nlp');
-const { saveDraft } = require('../lib/drafts');
+const { saveDraft, listDrafts } = require('../lib/drafts');
+const { readIndex } = require('../lib/index');
+const { readEntry } = require('../lib/entries');
 
 /**
  * Extract raw comment strings from source code.
@@ -57,7 +59,11 @@ async function mineFile(absFilePath, projectRoot) {
   const comments = extractComments(code, absFilePath);
   const created = [];
 
-  // Deduplicate: skip if we have a recent draft from same file with very similar title
+  const existingDrafts = listDrafts();
+  const index = readIndex();
+  const existingEntries = Object.values(index.entries).map(p => readEntry(p)).filter(Boolean);
+
+  // Deduplicate: skip if we have a recent draft or entry from same file with same title
   for (const comment of comments) {
     const score = scoreComment(comment);
     if (score < 0.5) continue;
@@ -65,6 +71,11 @@ async function mineFile(absFilePath, projectRoot) {
     const { type, confidence } = detectType(comment);
     const title = extractTitle(comment);
     if (!title || title.length < 3) continue;
+
+    const isDuplicateDraft = existingDrafts.some(d => d.suggestedTitle === title && (d.files || []).includes(relativePath));
+    const isDuplicateEntry = existingEntries.some(e => e.title === title && (e.files || []).includes(relativePath));
+
+    if (isDuplicateDraft || isDuplicateEntry) continue;
 
     const draft = {
       draftId: `draft-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
