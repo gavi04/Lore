@@ -67,9 +67,26 @@ async function init() {
     const hookDir = path.join('.git', 'hooks');
     if (fs.existsSync(hookDir)) {
       const hookPath = path.join(hookDir, 'post-commit');
-      await fs.writeFile(hookPath, HOOK_CONTENT);
-      await fs.chmod(hookPath, '755');
-      console.log(chalk.green('✓ Git post-commit hook installed'));
+      let writeHook = true;
+
+      if (fs.existsSync(hookPath)) {
+        const existingHook = await fs.readFile(hookPath, 'utf8');
+        if (existingHook.includes('Lore: Significant change detected')) {
+          writeHook = false;
+          console.log(chalk.dim('✓ Git post-commit hook already installed'));
+        } else {
+          // Append to existing hook
+          await fs.appendFile(hookPath, '\n' + HOOK_CONTENT.replace('#!/bin/bash\n', ''));
+          console.log(chalk.green('✓ Lore appended to existing Git post-commit hook'));
+          writeHook = false;
+        }
+      }
+
+      if (writeHook) {
+        await fs.writeFile(hookPath, HOOK_CONTENT);
+        await fs.chmod(hookPath, '0755');
+        console.log(chalk.green('✓ Git post-commit hook installed'));
+      }
     } else {
       console.log(chalk.yellow('⚠ Not a git repo — hook not installed'));
     }
