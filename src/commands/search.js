@@ -6,9 +6,16 @@ const { readEntry } = require('../lib/entries');
 const { printEntry } = require('../lib/format');
 const { requireInit } = require('../lib/guard');
 
-function search(query) {
+function search(queryArgs) {
   requireInit();
   try {
+    const query = Array.isArray(queryArgs) ? queryArgs.join(' ') : (queryArgs || '');
+
+    if (!query || query.trim().length === 0) {
+      console.error(chalk.red('\nError: You must provide a search query.'));
+      process.exit(1);
+    }
+
     const index = readIndex();
     const q = query.toLowerCase();
     const matches = [];

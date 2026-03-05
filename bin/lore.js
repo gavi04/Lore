@@ -148,7 +148,7 @@ program
   .action(require('../src/commands/stale'));
 
 program
-  .command('search <query>')
+  .command('search [query...]')
   .description('Search all entries for a keyword')
   .action(require('../src/commands/search'));
 
@@ -216,7 +216,7 @@ program
   .action(require('../src/commands/ui'));
 
 program
-  .command('prompt <query>')
+  .command('prompt [query...]')
   .description('Generate a perfectly formatted LLM context prompt from project memory')
   .option('-t, --threshold <number>', 'Relevance threshold (0.0 to 1.0)', '0.4')
   .option('-l, --limit <number>', 'Max number of entries to include', '10')

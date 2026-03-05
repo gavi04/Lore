@@ -7,14 +7,18 @@ const { readIndex } = require('../lib/index');
 const { readEntry } = require('../lib/entries');
 const { formatPromptContext } = require('../lib/format');
 
-async function promptCmd(query, options) {
+async function promptCmd(queryArgs, options) {
     requireInit();
 
-    if (!query || query.trim().length === 0) {
+    const queryInfo = Array.isArray(queryArgs) ? queryArgs.join(' ') : (queryArgs || '');
+
+    if (!queryInfo || queryInfo.trim().length === 0) {
         console.error(chalk.red('\nError: You must provide a query to generate a prompt.'));
         console.log(chalk.yellow('Example: lore prompt "I want to refactor the database"'));
         process.exit(1);
     }
+
+    const query = queryInfo;
 
     try {
         const threshold = parseFloat(options.threshold) || 0.4;
