@@ -95,7 +95,7 @@ async function init() {
         console.log(chalk.dim('\n  Scanning codebase for lore-worthy comments...'));
         try {
           const { mineDirectory } = require('../watcher/comments');
-          const count = mineDirectory(process.cwd(), process.cwd());
+          const count = await mineDirectory(process.cwd(), process.cwd());
           if (count > 0) {
             console.log(chalk.cyan(`  Found ${count} draft entr${count === 1 ? 'y' : 'ies'} — run: lore drafts`));
           }
