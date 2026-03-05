@@ -58,8 +58,9 @@ function onboard(options) {
       for (const e of byType.decision.slice(0, 5)) {
         console.log(chalk.white(`  • ${e.title}`));
         if (e.context) {
-          const summary = e.context.split('\n')[0].slice(0, 80);
-          console.log(chalk.dim(`    ${summary}${e.context.length > 80 ? '…' : ''}`));
+          const firstLine = e.context.split('\n')[0];
+          const summary = firstLine.slice(0, 80);
+          console.log(chalk.dim(`    ${summary}${firstLine.length > 80 ? '…' : ''}`));
         }
       }
       if (byType.decision.length > 5) {
