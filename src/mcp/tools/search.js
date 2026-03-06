@@ -89,11 +89,10 @@ async function handler(args) {
       };
     }
 
-    const formatted = matches.map(e => formatEntry(e)).join('\n\n---\n\n');
     const budgeted = enforceBudget(matches, budget);
 
     return {
-      content: [{ type: 'text', text: budgeted || formatted }],
+      content: [{ type: 'text', text: budgeted || `Matches found, but they exceed the ${budget} token budget.` }],
     };
   } catch (e) {
     return {
