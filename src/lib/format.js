@@ -41,7 +41,7 @@ function printEntry(entry) {
   content += `${titleColor(typeLabel)} ${titleColor(entry.title)} ${chalk.gray('(' + entry.date + ')')}\n\n`;
 
   // Wrap context text roughly
-  const contextWords = entry.context.split(' ');
+  const contextWords = (entry.context || '').split(' ');
   let currentLine = '';
   for (const word of contextWords) {
     if (currentLine.length + word.length > 70) {
@@ -86,28 +86,28 @@ function formatPromptContext(query, entries) {
   if (invariants.length > 0) {
     output += `\n## Invariants (CRITICAL: DO NOT BREAK)\n`;
     for (const e of invariants) {
-      output += `- [${e.id}]: ${e.context.trim().replace(/\n/g, ' ')}\n`;
+      output += `- [${e.id}]: ${(e.context || '').trim().replace(/\n/g, ' ')}\n`;
     }
   }
 
   if (gotchas.length > 0) {
     output += `\n## Gotchas (WARNING: KNOWN TRAPS)\n`;
     for (const e of gotchas) {
-      output += `- [${e.id}]: ${e.context.trim().replace(/\n/g, ' ')}\n`;
+      output += `- [${e.id}]: ${(e.context || '').trim().replace(/\n/g, ' ')}\n`;
     }
   }
 
   if (decisions.length > 0) {
     output += `\n## Relevant Decisions\n`;
     for (const e of decisions) {
-      output += `- [${e.id}]: ${e.title} - ${e.context.trim().replace(/\n/g, ' ')}\n`;
+      output += `- [${e.id}]: ${e.title} - ${(e.context || '').trim().replace(/\n/g, ' ')}\n`;
     }
   }
 
   if (graveyard.length > 0) {
     output += `\n## Graveyard (DO NOT SUGGEST OR USE)\n`;
     for (const e of graveyard) {
-      output += `- [${e.id}]: ${e.context.trim().replace(/\n/g, ' ')}\n`;
+      output += `- [${e.id}]: ${(e.context || '').trim().replace(/\n/g, ' ')}\n`;
     }
   }
 
