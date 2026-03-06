@@ -12,7 +12,7 @@ function stale() {
     const index = readIndex();
     let found = false;
 
-    for (const [id, entryPath] of Object.entries(index.entries)) {
+    for (const entryPath of Object.values(index.entries)) {
       const entry = readEntry(entryPath);
       if (!entry) continue;
 
