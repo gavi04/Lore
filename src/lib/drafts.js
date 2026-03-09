@@ -44,41 +44,82 @@ function listDrafts() {
 }
 
 /**
- * Promote a draft to a real Lore entry.
+ * Promote a draft to a real Lore entry, or apply it as an update to an existing entry.
  * @param {string} draftId
- * @returns {object} the created entry
+ * @returns {object} the created or updated entry
  */
 function acceptDraft(draftId) {
   const draftPath = path.join(DRAFTS_DIR(), `${draftId}.json`);
   const draft = fs.readJsonSync(draftPath);
 
-  const type = draft.suggestedType || 'decision';
-  const title = draft.suggestedTitle || 'Untitled';
-  const id = generateId(type, title);
+  let entry;
 
-  const entry = {
-    id,
-    type,
-    title,
-    context: draft.evidence || '',
-    files: draft.files || [],
-    tags: draft.tags || [],
-    alternatives: [],
-    tradeoffs: '',
-    date: new Date().toISOString(),
-  };
+  if (draft.updatesEntryId) {
+    // This draft is an update to an existing entry — modify in place
+    const index = readIndex();
+    const existingPath = index.entries[draft.updatesEntryId];
+    if (!existingPath) {
+      throw new Error(`Original entry "${draft.updatesEntryId}" not found. It may have been deleted.`);
+    }
 
-  writeEntry(entry);
-  const index = readIndex();
-  addEntryToIndex(index, entry);
-  writeIndex(index);
+    const { readEntry: readExisting } = require('./entries');
+    entry = readExisting(existingPath);
+    if (!entry) {
+      throw new Error(`Failed to read original entry "${draft.updatesEntryId}".`);
+    }
 
-  // Auto-embed if Ollama available
-  try {
-    const { generateEmbedding, storeEmbedding } = require('./embeddings');
-    const text = [title, entry.context, ...entry.tags].join(' ');
-    generateEmbedding(text).then(vec => storeEmbedding(id, vec)).catch(() => {});
-  } catch (e) {}
+    // Apply updates from draft — only override fields that have meaningful values
+    if (draft.suggestedTitle && draft.suggestedTitle !== entry.title) entry.title = draft.suggestedTitle;
+    if (draft.evidence && !draft.evidence.startsWith('[UPDATE to ')) entry.context = draft.evidence;
+    else if (draft.evidence) {
+      // Strip the "[UPDATE to xxx] " prefix from the context
+      entry.context = draft.evidence.replace(/^\[UPDATE to [^\]]+\]\s*/, '');
+    }
+    if (draft.files && draft.files.length > 0) entry.files = draft.files;
+    if (draft.tags && draft.tags.length > 0) entry.tags = draft.tags;
+    if (draft.alternatives && draft.alternatives.length > 0) entry.alternatives = draft.alternatives;
+    if (draft.tradeoffs) entry.tradeoffs = draft.tradeoffs;
+    entry.lastUpdated = new Date().toISOString();
+
+    writeEntry(entry);
+    writeIndex(index);
+
+    // Re-embed
+    try {
+      const { generateEmbedding, storeEmbedding } = require('./embeddings');
+      const text = [entry.title, entry.context, ...(entry.alternatives || []), entry.tradeoffs || '', ...(entry.tags || [])].join(' ');
+      generateEmbedding(text).then(vec => storeEmbedding(entry.id, vec)).catch(() => {});
+    } catch (e) {}
+  } else {
+    // Standard draft → new entry
+    const type = draft.suggestedType || 'decision';
+    const title = draft.suggestedTitle || 'Untitled';
+    const id = generateId(type, title);
+
+    entry = {
+      id,
+      type,
+      title,
+      context: draft.evidence || '',
+      files: draft.files || [],
+      tags: draft.tags || [],
+      alternatives: draft.alternatives || [],
+      tradeoffs: draft.tradeoffs || '',
+      date: new Date().toISOString(),
+    };
+
+    writeEntry(entry);
+    const index = readIndex();
+    addEntryToIndex(index, entry);
+    writeIndex(index);
+
+    // Auto-embed if Ollama available
+    try {
+      const { generateEmbedding, storeEmbedding } = require('./embeddings');
+      const text = [title, entry.context, ...entry.alternatives, entry.tradeoffs, ...entry.tags].join(' ');
+      generateEmbedding(text).then(vec => storeEmbedding(id, vec)).catch(() => {});
+    } catch (e) {}
+  }
 
   fs.removeSync(draftPath);
   return entry;

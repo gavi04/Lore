@@ -10,11 +10,12 @@ const {
 const why = require('./tools/why');
 const search = require('./tools/search');
 const log = require('./tools/log');
+const update = require('./tools/update');
 const stale = require('./tools/stale');
 const overview = require('./tools/overview');
 const drafts = require('./tools/drafts');
 
-const TOOLS = [why, search, log, stale, overview, drafts];
+const TOOLS = [why, search, log, update, stale, overview, drafts];
 
 async function startServer() {
   const server = new Server(
