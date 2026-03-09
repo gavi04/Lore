@@ -8,6 +8,7 @@ const { readIndex, LORE_DIR } = require('../lib/index');
 const { readEntry } = require('../lib/entries');
 const { computeScore } = require('../lib/scorer');
 const { listDrafts, acceptDraft, deleteDraft } = require('../lib/drafts');
+const { getServerStatus } = require('../mcp/status');
 
 // Only load 'open' dynamically to avoid overhead on other CLI commands if not needed
 async function openBrowser(url) {
@@ -15,11 +16,9 @@ async function openBrowser(url) {
     await open(url);
 }
 
-function ui(options) {
-    requireInit();
-
+function createApp(portNum) {
     const app = express();
-    const PORT = options.port || 3333;
+    const PORT = portNum || 3333;
 
     app.use(express.json());
 
@@ -53,6 +52,18 @@ function ui(options) {
             });
         } catch (e) {
             res.status(500).json({ error: e.message });
+        }
+    });
+
+    app.get('/api/mcp-status', (req, res) => {
+        try {
+            const status = getServerStatus();
+            res.json({
+                active: !!status,
+                ...(status || {}),
+            });
+        } catch (e) {
+            res.json({ active: false });
         }
     });
 
@@ -166,6 +177,23 @@ function ui(options) {
             process.exit(1);
         }
     });
+
+    return server;
+}
+
+/**
+ * Start just the dashboard Express server (called from serve.js).
+ * @param {number} port
+ * @returns {object} Express server instance
+ */
+function startDashboard(port) {
+    return createApp(port || 3333);
+}
+
+function ui(options) {
+    requireInit();
+    createApp(options.port || 3333);
 }
 
 module.exports = ui;
+module.exports.startDashboard = startDashboard;

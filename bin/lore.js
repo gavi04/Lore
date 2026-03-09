@@ -164,8 +164,9 @@ program
 
 program
   .command('serve')
-  .description('Start the Lore MCP server (stdio) for use with Claude Code')
+  .description('Start the Lore MCP server (stdio) and UI dashboard for use with Claude Code')
   .option('-q, --quiet', 'Suppress startup messages (use when piped into MCP client)')
+  .option('-p, --port <port>', 'Port for the UI dashboard', '3333')
   .action(require('../src/commands/serve'));
 
 program
