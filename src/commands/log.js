@@ -4,7 +4,7 @@ const chalk = require('chalk');
 const inquirer = require('inquirer');
 const { readIndex, writeIndex, addEntryToIndex } = require('../lib/index');
 const { requireInit } = require('../lib/guard');
-const { writeEntry, generateId } = require('../lib/entries');
+const { writeEntry, generateId, findDuplicate } = require('../lib/entries');
 const { getRecentFiles } = require('../lib/git');
 
 async function log(options) {
@@ -101,6 +101,32 @@ async function log(options) {
     if (!validTypes.includes(type)) {
       console.error(chalk.red(`Invalid type "${type}". Must be one of: ${validTypes.join(', ')}`));
       process.exit(1);
+    }
+
+    // Deduplication check
+    const duplicate = findDuplicate(index, type, title);
+    if (duplicate) {
+      const matchLabel = duplicate.match === 'exact' ? 'Exact duplicate' : 'Similar entry';
+      console.log(chalk.yellow(`\n⚠ ${matchLabel} found: ${chalk.bold(duplicate.entry.id)}`));
+      console.log(chalk.dim(`  Title: "${duplicate.entry.title}"\n`));
+
+      // In inline mode (flags), just warn and exit
+      if (options.type && options.title && options.context) {
+        console.log(chalk.yellow('Skipping to avoid duplicate. Use a different title or edit the existing entry.'));
+        return;
+      }
+
+      // In interactive mode, ask user
+      const { proceed } = await inquirer.prompt([{
+        type: 'confirm',
+        name: 'proceed',
+        message: 'Create entry anyway?',
+        default: false,
+      }]);
+      if (!proceed) {
+        console.log(chalk.dim('Aborted.'));
+        return;
+      }
     }
 
     const id = generateId(type, title);

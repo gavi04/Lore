@@ -50,10 +50,71 @@ function readAllEntries(index) {
   return entries;
 }
 
+/**
+ * Check if a similar entry or draft already exists.
+ * @param {object} index - The lore index
+ * @param {string} type - Entry type
+ * @param {string} title - Entry title
+ * @returns {{ match: 'exact'|'fuzzy', entry: object, source: 'entry'|'draft' }|null}
+ */
+function findDuplicate(index, type, title) {
+  const normalizedTitle = title.toLowerCase().trim();
+  const titleWords = new Set(normalizedTitle.split(/\s+/).filter(w => w.length > 2));
+
+  function checkTitle(candidateTitle) {
+    const candidate = (candidateTitle || '').toLowerCase().trim();
+
+    // Exact match (case-insensitive)
+    if (candidate === normalizedTitle) return 'exact';
+
+    // Fuzzy match: ≥60% word overlap
+    if (titleWords.size > 0) {
+      const candidateWords = new Set(candidate.split(/\s+/).filter(w => w.length > 2));
+      if (candidateWords.size === 0) return null;
+
+      let overlap = 0;
+      for (const w of titleWords) {
+        if (candidateWords.has(w)) overlap++;
+      }
+
+      const similarity = overlap / Math.max(titleWords.size, candidateWords.size);
+      if (similarity >= 0.6) return 'fuzzy';
+    }
+
+    return null;
+  }
+
+  // Check approved entries
+  for (const entryPath of Object.values(index.entries)) {
+    const entry = readEntry(entryPath);
+    if (!entry || entry.type !== type) continue;
+
+    const match = checkTitle(entry.title);
+    if (match) return { match, entry, source: 'entry' };
+  }
+
+  // Check pending drafts
+  try {
+    const { listDrafts } = require('./drafts');
+    const drafts = listDrafts();
+    for (const draft of drafts) {
+      if (draft.suggestedType !== type) continue;
+
+      const match = checkTitle(draft.suggestedTitle);
+      if (match) return { match, entry: { id: draft.draftId, title: draft.suggestedTitle, type: draft.suggestedType }, source: 'draft' };
+    }
+  } catch (e) {
+    // drafts module not available — skip
+  }
+
+  return null;
+}
+
 module.exports = {
   getEntryPath,
   readEntry,
   writeEntry,
   generateId,
   readAllEntries,
+  findDuplicate,
 };

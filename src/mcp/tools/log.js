@@ -1,11 +1,13 @@
 'use strict';
 
 const { readIndex, writeIndex, addEntryToIndex } = require('../../lib/index');
-const { generateId, writeEntry } = require('../../lib/entries');
+const { generateId, writeEntry, findDuplicate } = require('../../lib/entries');
+const { readConfig } = require('../../lib/config');
+const { saveDraft } = require('../../lib/drafts');
 
 const toolDefinition = {
   name: 'lore_log',
-  description: 'Create a new Lore entry to record an architectural decision, invariant, gotcha, or graveyard item. Use this when you make a significant technical decision that future developers (or AI) should know about.',
+  description: 'Create a new Lore entry to record an architectural decision, invariant, gotcha, or graveyard item. Use this when you make a significant technical decision that future developers (or AI) should know about. Note: entries may be saved as drafts pending human review depending on project configuration.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -50,6 +52,40 @@ async function handler(args) {
   const { type, title, context, files = [], tags = [], alternatives = [], tradeoffs = '' } = args;
 
   try {
+    const index = readIndex();
+
+    // Deduplication check
+    const duplicate = findDuplicate(index, type, title);
+    if (duplicate) {
+      const matchLabel = duplicate.match === 'exact' ? 'Exact duplicate' : 'Similar entry';
+      return {
+        content: [{ type: 'text', text: `${matchLabel} already exists: "${duplicate.entry.title}" (${duplicate.entry.id}). No new entry created.` }],
+      };
+    }
+
+    const config = readConfig();
+    const requireConfirmation = config.mcp && config.mcp.confirmEntries !== false;
+
+    if (requireConfirmation) {
+      // Route to drafts for human review
+      const draftId = saveDraft({
+        suggestedType: type,
+        suggestedTitle: title,
+        evidence: context,
+        files,
+        tags,
+        alternatives,
+        tradeoffs,
+        confidence: 0.9,
+        source: 'mcp-log',
+      });
+
+      return {
+        content: [{ type: 'text', text: `Draft created for human review: "${title}" (${draftId}). The developer can approve it with: lore drafts` }],
+      };
+    }
+
+    // Direct entry creation (confirmEntries is explicitly false)
     const id = generateId(type, title);
     const entry = {
       id,
@@ -64,8 +100,6 @@ async function handler(args) {
     };
 
     writeEntry(entry);
-
-    const index = readIndex();
     addEntryToIndex(index, entry);
     writeIndex(index);
 
@@ -91,3 +125,4 @@ async function handler(args) {
 }
 
 module.exports = { toolDefinition, handler };
+

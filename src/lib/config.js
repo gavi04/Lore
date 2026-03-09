@@ -14,6 +14,7 @@ const DEFAULTS = {
   },
   mcp: {
     tokenBudget: 4000,
+    confirmEntries: true,
   },
 };
 
